@@ -6,8 +6,8 @@ const skuSchema = new mongoose.Schema({
     required: true,
   },
   material: {
-    type: String,
-    required: true,
+    type: mongoose.Schema.Types.Mixed,  // 支持字符串或对象格式
+    required: false,  // 改为非必填，兼容旧数据
   },
   materialId: {
     type: mongoose.Schema.Types.ObjectId,
