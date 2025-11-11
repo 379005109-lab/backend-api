@@ -49,7 +49,7 @@ const productSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['sofa', 'bed', 'dining', 'storage', 'desk', 'chair', 'decoration', '沙发', '床', '餐桌', '储物', '书桌', '椅子', '装饰'],
+      enum: ['sofa', 'bed', 'dining', 'storage', 'desk', 'chair', 'decoration', '沙发', '床', '餐桌', '储物', '书桌', '椅子', '装饰', '沙'],
     },
     style: {
       type: String,
@@ -84,16 +84,16 @@ const productSchema = new mongoose.Schema(
       type: String,
     },
     material: {
-      type: String,
+      type: mongoose.Schema.Types.Mixed,  // 支持字符串或对象格式
     },
     filling: {
-      type: String,
+      type: mongoose.Schema.Types.Mixed,  // 支持字符串或对象格式
     },
     frame: {
-      type: String,
+      type: mongoose.Schema.Types.Mixed,  // 支持字符串或对象格式
     },
     legs: {
-      type: String,
+      type: mongoose.Schema.Types.Mixed,  // 支持字符串或对象格式
     },
     images: {
       type: [String],
