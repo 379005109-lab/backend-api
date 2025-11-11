@@ -10,7 +10,7 @@ const orderItemSchema = new mongoose.Schema({
   productImage: String,
   sku: {
     color: String,
-    material: String,
+    material: mongoose.Schema.Types.Mixed,  // 支持字符串或对象格式，兼容旧数据
   },
   quantity: {
     type: Number,
