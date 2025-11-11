@@ -1,0 +1,58 @@
+#!/bin/bash
+
+echo "======================================"
+echo "  推送代码到 GitHub"
+echo "======================================"
+echo ""
+echo "仓库地址: https://github.com/3780010199-lzb/backend-api.git"
+echo ""
+
+cd /home/devbox/project
+
+echo "正在推送代码..."
+git push -u origin main
+
+if [ $? -eq 0 ]; then
+    echo ""
+    echo "✅ 代码推送成功！"
+    echo ""
+    echo "======================================"
+    echo "  下一步：在 LAF 平台配置"
+    echo "======================================"
+    echo ""
+    echo "1. 回到 LAF 平台"
+    echo "2. 点击 '+ 新建应用'"
+    echo "3. 选择 '从 Git 仓库导入'"
+    echo ""
+    echo "📋 填写以下信息："
+    echo ""
+    echo "Git 仓库地址:"
+    echo "https://github.com/3780010199-lzb/backend-api.git"
+    echo ""
+    echo "分支: main"
+    echo "启动命令: node server.js"
+    echo "端口: 5000"
+    echo ""
+    echo "🔧 环境变量（必须配置）:"
+    echo "NODE_ENV=production"
+    echo "PORT=5000"
+    echo "MONGODB_URI=mongodb://root:q5rdw4tb@test-db-mongodb.ns-cxxiwxce.svc:27017/backend_db?authSource=admin"
+    echo ""
+    echo "✅ 记得勾选 '启用自动部署'！"
+    echo ""
+else
+    echo ""
+    echo "❌ 推送失败！"
+    echo ""
+    echo "可能的原因："
+    echo "1. 仓库还没创建 - 请先访问 https://github.com/new 创建仓库"
+    echo "2. 需要认证 - 需要创建 Personal Access Token"
+    echo ""
+    echo "创建 Token 步骤："
+    echo "1. 访问: https://github.com/settings/tokens"
+    echo "2. 点击 'Generate new token (classic)'"
+    echo "3. 勾选 'repo' 权限"
+    echo "4. 生成并复制 Token"
+    echo "5. 再次运行推送命令，用 Token 作为密码"
+    echo ""
+fi
