@@ -1,0 +1,46 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Backend Server with PM2",
+      "type": "shell",
+      "command": "pm2 start ecosystem.config.js",
+      "isBackground": true,
+      "problemMatcher": [],
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "Stop Backend Server",
+      "type": "shell",
+      "command": "pm2 stop backend-api",
+      "problemMatcher": []
+    },
+    {
+      "label": "Restart Backend Server",
+      "type": "shell",
+      "command": "pm2 restart backend-api",
+      "problemMatcher": []
+    },
+    {
+      "label": "View Server Status",
+      "type": "shell",
+      "command": "pm2 list",
+      "problemMatcher": []
+    },
+    {
+      "label": "View Server Logs",
+      "type": "shell",
+      "command": "pm2 logs backend-api",
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}

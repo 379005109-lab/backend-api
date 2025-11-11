@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录测试工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        .result.success {
+            background: #d1fae5;
+            color: #059669;
+            border: 1px solid #059669;
+        }
+        .result.error {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #dc2626;
+        }
+        .result.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #1e40af;
+        }
+        .result h3 {
+            margin-bottom: 10px;
+        }
+        .result pre {
+            background: rgba(0,0,0,0.05);
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .debug-info {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        .debug-info h3 {
+            color: #374151;
+            margin-bottom: 15px;
+        }
+        .debug-item {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .debug-item strong {
+            color: #667eea;
+        }
+        code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 登录测试工具</h1>
+        <p class="subtitle">用于诊断登录问题</p>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label>用户名</label>
+                <input type="text" id="username" value="zcd" required>
+            </div>
+
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" id="password" value="asd123.." required>
+            </div>
+
+            <button type="submit" class="btn" id="loginBtn">测试登录</button>
+        </form>
+
+        <div id="result" class="result"></div>
+
+        <div class="debug-info">
+            <h3>📋 调试信息</h3>
+            <div class="debug-item">
+                <strong>API地址:</strong> <code id="apiUrl">/api/auth/login</code>
+            </div>
+            <div class="debug-item">
+                <strong>当前域名:</strong> <code id="currentDomain"></code>
+            </div>
+            <div class="debug-item">
+                <strong>请求方法:</strong> <code>POST</code>
+            </div>
+            <div class="debug-item">
+                <strong>Content-Type:</strong> <code>application/json</code>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 显示当前域名
+        document.getElementById('currentDomain').textContent = window.location.origin;
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const resultDiv = document.getElementById('result');
+            const loginBtn = document.getElementById('loginBtn');
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // 禁用按钮
+            loginBtn.disabled = true;
+            loginBtn.textContent = '正在测试...';
+
+            // 隐藏之前的结果
+            resultDiv.style.display = 'none';
+
+            try {
+                const requestData = {
+                    username: username,
+                    password: password
+                };
+
+                console.log('发送登录请求:', requestData);
+
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                console.log('响应状态:', response.status);
+
+                const data = await response.json();
+                console.log('响应数据:', data);
+
+                resultDiv.style.display = 'block';
+
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>✅ 登录成功！</h3>
+                        <p><strong>用户名:</strong> ${data.data.user.username}</p>
+                        <p><strong>角色:</strong> ${data.data.user.role}</p>
+                        <p><strong>Token:</strong> ${data.data.token.substring(0, 40)}...</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h3>❌ 登录失败</h3>
+                        <p><strong>错误:</strong> ${data.error || data.message}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                console.error('请求错误:', error);
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h3>❌ 网络错误</h3>
+                    <p><strong>错误信息:</strong> ${error.message}</p>
+                    <p>请检查网络连接和后端服务状态</p>
+                `;
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = '测试登录';
+            }
+        });
+
+        // 页面加载时的检查
+        window.addEventListener('load', () => {
+            const infoDiv = document.getElementById('result');
+            infoDiv.style.display = 'block';
+            infoDiv.className = 'result info';
+            infoDiv.innerHTML = `
+                <h3>ℹ️ 使用说明</h3>
+                <p>1. 用户名: <code>zcd</code></p>
+                <p>2. 密码: <code>asd123..</code> (注意有两个点)</p>
+                <p>3. 点击"测试登录"按钮</p>
+                <p>4. 查看控制台(F12)获取详细信息</p>
+            `;
+        });
+    </script>
+</body>
+</html>

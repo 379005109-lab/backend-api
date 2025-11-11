@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品导入导出测试</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      opacity: 0.9;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 2px solid #f0f0f0;
+      border-radius: 8px;
+    }
+
+    .section h2 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+    }
+
+    .section h2::before {
+      content: '●';
+      color: #667eea;
+      margin-right: 10px;
+    }
+
+    .section p {
+      color: #666;
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+    }
+
+    .btn-success {
+      background: #28a745;
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 10px;
+    }
+
+    input[type="file"] {
+      position: absolute;
+      left: -9999px;
+    }
+
+    .file-label {
+      display: inline-block;
+      padding: 12px 24px;
+      background: #f8f9fa;
+      border: 2px dashed #dee2e6;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .file-label:hover {
+      border-color: #667eea;
+      background: #f0f4ff;
+    }
+
+    .file-name {
+      display: inline-block;
+      margin-left: 10px;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .result {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 6px;
+      font-size: 14px;
+      line-height: 1.6;
+      display: none;
+    }
+
+    .result.success {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+      display: block;
+    }
+
+    .result.error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+      display: block;
+    }
+
+    .result.info {
+      background: #d1ecf1;
+      border: 1px solid #bee5eb;
+      color: #0c5460;
+      display: block;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ffffff;
+      border-top: 2px solid transparent;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-left: 8px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .stat-card {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-card .number {
+      font-size: 24px;
+      font-weight: bold;
+      color: #667eea;
+      margin-bottom: 5px;
+    }
+
+    .stat-card .label {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .api-url {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #495057;
+      word-break: break-all;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📦 商品导入导出系统</h1>
+      <p>Excel表格批量管理商品数据</p>
+    </div>
+
+    <div class="content">
+      <!-- 下载模板 -->
+      <div class="section">
+        <h2>1. 下载Excel模板</h2>
+        <p>下载标准格式的商品导入模板，包含示例数据供参考</p>
+        <button class="btn" onclick="downloadTemplate()">
+          📥 下载模板
+        </button>
+        <div class="api-url">
+          GET /api/products/template/download
+        </div>
+        <div id="templateResult" class="result"></div>
+      </div>
+
+      <!-- 导入数据 -->
+      <div class="section">
+        <h2>2. 导入商品数据</h2>
+        <p>选择符合模板格式的Excel文件进行批量导入</p>
+        
+        <div class="file-input-wrapper">
+          <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="updateFileName()">
+          <label for="fileInput" class="file-label">
+            📎 选择文件
+          </label>
+          <span class="file-name" id="fileName">未选择文件</span>
+        </div>
+        
+        <br>
+        
+        <button class="btn btn-success" onclick="importData()" id="importBtn">
+          📤 导入数据
+        </button>
+        
+        <div class="api-url">
+          POST /api/products/import
+        </div>
+        <div id="importResult" class="result"></div>
+      </div>
+
+      <!-- 导出数据 -->
+      <div class="section">
+        <h2>3. 导出商品数据</h2>
+        <p>导出数据库中的所有商品数据为Excel文件</p>
+        <button class="btn btn-secondary" onclick="exportData()">
+          💾 导出所有数据
+        </button>
+        <div class="api-url">
+          GET /api/products/export
+        </div>
+        <div id="exportResult" class="result"></div>
+      </div>
+
+      <!-- 查看数据 -->
+      <div class="section">
+        <h2>4. 查看商品列表</h2>
+        <p>查看已导入的商品数据</p>
+        <button class="btn" onclick="fetchProducts()">
+          🔍 查看数据
+        </button>
+        <button class="btn btn-secondary" onclick="refreshStats()">
+          📊 刷新统计
+        </button>
+        
+        <div class="stats" id="stats" style="display: none;">
+          <div class="stat-card">
+            <div class="number" id="totalCount">0</div>
+            <div class="label">总商品数</div>
+          </div>
+          <div class="stat-card">
+            <div class="number" id="proCount">0</div>
+            <div class="label">PRO商品</div>
+          </div>
+          <div class="stat-card">
+            <div class="number" id="categoryCount">0</div>
+            <div class="label">商品类别</div>
+          </div>
+        </div>
+        
+        <div class="api-url">
+          GET /api/products
+        </div>
+        <div id="listResult" class="result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // API基础地址
+    const API_BASE = 'http://localhost:5000/api/products';
+
+    // 更新文件名显示
+    function updateFileName() {
+      const fileInput = document.getElementById('fileInput');
+      const fileName = document.getElementById('fileName');
+      
+      if (fileInput.files.length > 0) {
+        fileName.textContent = fileInput.files[0].name;
+      } else {
+        fileName.textContent = '未选择文件';
+      }
+    }
+
+    // 显示结果
+    function showResult(elementId, message, type = 'info') {
+      const resultDiv = document.getElementById(elementId);
+      resultDiv.className = `result ${type}`;
+      resultDiv.innerHTML = message;
+      resultDiv.style.display = 'block';
+
+      // 3秒后自动隐藏成功消息
+      if (type === 'success') {
+        setTimeout(() => {
+          resultDiv.style.display = 'none';
+        }, 5000);
+      }
+    }
+
+    // 1. 下载模板
+    function downloadTemplate() {
+      showResult('templateResult', '正在下载模板...', 'info');
+      
+      const link = document.createElement('a');
+      link.href = `${API_BASE}/template/download`;
+      link.download = '商品导入模板.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      setTimeout(() => {
+        showResult('templateResult', '✅ 模板下载成功！请查看下载文件夹', 'success');
+      }, 500);
+    }
+
+    // 2. 导入数据
+    async function importData() {
+      const fileInput = document.getElementById('fileInput');
+      const importBtn = document.getElementById('importBtn');
+      
+      if (!fileInput.files.length) {
+        showResult('importResult', '❌ 请先选择要导入的Excel文件', 'error');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      importBtn.disabled = true;
+      importBtn.innerHTML = '导入中... <span class="loading"></span>';
+      showResult('importResult', '正在上传并处理文件，请稍候...', 'info');
+
+      try {
+        const response = await fetch(`${API_BASE}/import`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showResult('importResult', 
+            `✅ 导入成功！<br>成功导入 <strong>${result.count}</strong> 条商品记录`, 
+            'success'
+          );
+          fileInput.value = '';
+          updateFileName();
+          refreshStats();
+        } else {
+          let errorMsg = `❌ 导入失败：${result.message}`;
+          if (result.errors && result.errors.length > 0) {
+            errorMsg += '<br><br><strong>错误详情：</strong><br>';
+            result.errors.forEach(err => {
+              errorMsg += `第 ${err.row} 行: ${err.message}<br>`;
+            });
+          }
+          showResult('importResult', errorMsg, 'error');
+        }
+      } catch (error) {
+        console.error('导入错误:', error);
+        showResult('importResult', `❌ 导入失败：${error.message}`, 'error');
+      } finally {
+        importBtn.disabled = false;
+        importBtn.innerHTML = '📤 导入数据';
+      }
+    }
+
+    // 3. 导出数据
+    function exportData() {
+      showResult('exportResult', '正在导出数据...', 'info');
+      
+      const link = document.createElement('a');
+      link.href = `${API_BASE}/export`;
+      link.download = '商品数据.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      setTimeout(() => {
+        showResult('exportResult', '✅ 数据导出成功！请查看下载文件夹', 'success');
+      }, 500);
+    }
+
+    // 4. 查看商品列表
+    async function fetchProducts() {
+      showResult('listResult', '正在加载数据...', 'info');
+
+      try {
+        const response = await fetch(`${API_BASE}?page=1&limit=5`);
+        const result = await response.json();
+
+        if (result.success) {
+          let html = `✅ 查询成功！共 <strong>${result.total}</strong> 条商品<br><br>`;
+          
+          if (result.data.length > 0) {
+            html += '<strong>最新的5条记录：</strong><br>';
+            result.data.forEach((product, index) => {
+              html += `<br>${index + 1}. ${product.productName} (${product.model}) - ¥${product.listPrice}`;
+              if (product.isPro) html += ' <span style="color: #667eea;">PRO</span>';
+            });
+          } else {
+            html += '暂无数据，请先导入商品';
+          }
+          
+          showResult('listResult', html, 'success');
+        } else {
+          showResult('listResult', `❌ 查询失败：${result.message}`, 'error');
+        }
+      } catch (error) {
+        console.error('查询错误:', error);
+        showResult('listResult', `❌ 查询失败：${error.message}`, 'error');
+      }
+    }
+
+    // 刷新统计数据
+    async function refreshStats() {
+      try {
+        const response = await fetch(`${API_BASE}?page=1&limit=1000`);
+        const result = await response.json();
+
+        if (result.success) {
+          const statsDiv = document.getElementById('stats');
+          statsDiv.style.display = 'grid';
+
+          // 总数
+          document.getElementById('totalCount').textContent = result.total;
+
+          // PRO数量
+          const proCount = result.data.filter(p => p.isPro).length;
+          document.getElementById('proCount').textContent = proCount;
+
+          // 类别数量
+          const categories = new Set(result.data.map(p => p.category));
+          document.getElementById('categoryCount').textContent = categories.size;
+        }
+      } catch (error) {
+        console.error('统计错误:', error);
+      }
+    }
+
+    // 页面加载时自动刷新统计
+    window.onload = function() {
+      refreshStats();
+    };
+  </script>
+</body>
+</html>

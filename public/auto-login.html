@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自动登录工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        .status {
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+        .status.loading {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .status.success {
+            background: #d1fae5;
+            color: #059669;
+        }
+        .status.error {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .btn {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: #6b7280;
+        }
+        pre {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
+            overflow-x: auto;
+            font-size: 12px;
+            margin: 15px 0;
+        }
+        .account-info {
+            background: #eff6ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #3b82f6;
+        }
+        .account-info strong {
+            color: #1e40af;
+        }
+        code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 自动登录工具</h1>
+        
+        <div class="account-info">
+            <p><strong>账号信息</strong></p>
+            <p>用户名: <code>zcd</code></p>
+            <p>密码: <code>asd123..</code></p>
+            <p>角色: <code>super_admin</code></p>
+        </div>
+
+        <div id="status" class="status loading">
+            正在自动登录，请稍候...
+        </div>
+
+        <div id="details" style="display: none;">
+            <pre id="response"></pre>
+        </div>
+
+        <div>
+            <button class="btn" onclick="retryLogin()">重试登录</button>
+            <button class="btn btn-secondary" onclick="location.href='/'">返回首页</button>
+        </div>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const detailsDiv = document.getElementById('details');
+        const responseDiv = document.getElementById('response');
+
+        async function attemptLogin() {
+            try {
+                statusDiv.className = 'status loading';
+                statusDiv.textContent = '🔄 正在尝试登录...';
+
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'zcd',
+                        password: 'asd123..'
+                    })
+                });
+
+                const data = await response.json();
+                
+                detailsDiv.style.display = 'block';
+                responseDiv.textContent = JSON.stringify(data, null, 2);
+
+                if (data.success) {
+                    // 保存token和用户信息
+                    localStorage.setItem('token', data.data.token);
+                    localStorage.setItem('user', JSON.stringify(data.data.user));
+                    
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = `
+                        ✅ 登录成功！<br><br>
+                        用户: ${data.data.user.username}<br>
+                        角色: ${data.data.user.role}<br><br>
+                        <strong>3秒后自动跳转首页...</strong>
+                    `;
+                    
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 3000);
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = `
+                        ❌ 登录失败<br><br>
+                        错误: ${data.error || data.message || '未知错误'}<br><br>
+                        请查看下方详细信息或点击重试
+                    `;
+                }
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `
+                    ❌ 网络错误<br><br>
+                    ${error.message}<br><br>
+                    请检查网络连接或联系管理员
+                `;
+                
+                detailsDiv.style.display = 'block';
+                responseDiv.textContent = error.stack || error.message;
+            }
+        }
+
+        function retryLogin() {
+            detailsDiv.style.display = 'none';
+            attemptLogin();
+        }
+
+        // 页面加载时自动尝试登录
+        window.addEventListener('load', () => {
+            // 检查是否已经登录
+            const token = localStorage.getItem('token');
+            if (token) {
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = `
+                    ✅ 检测到已登录状态<br><br>
+                    <strong>3秒后跳转首页...</strong>
+                `;
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 3000);
+            } else {
+                // 延迟1秒后自动登录
+                setTimeout(attemptLogin, 1000);
+            }
+        });
+    </script>
+</body>
+</html>
