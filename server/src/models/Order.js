@@ -1,16 +1,16 @@
-import mongoose from 'mongoose'
+import mongoose from "mongoose";
 
 const orderItemSchema = new mongoose.Schema({
   product: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product',
+    ref: "Product",
     required: true,
   },
   productName: String,
   productImage: String,
   sku: {
     color: String,
-    material: mongoose.Schema.Types.Mixed,  // 支持字符串或对象格式，兼容旧数据
+    material: mongoose.Schema.Types.Mixed, // 支持字符串或对象格式，兼容旧数据
   },
   quantity: {
     type: Number,
@@ -22,7 +22,7 @@ const orderItemSchema = new mongoose.Schema({
     required: true,
     min: 0,
   },
-})
+});
 
 const orderSchema = new mongoose.Schema(
   {
@@ -33,17 +33,26 @@ const orderSchema = new mongoose.Schema(
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
+      ref: "User",
+      required: false,
+    },
+    customerName: {
+      type: String,
+    },
+    customerPhone: {
+      type: String,
+    },
+    customerEmail: {
+      type: String,
     },
     items: {
       type: [orderItemSchema],
       required: true,
       validate: {
         validator: function (v) {
-          return v.length > 0
+          return v.length > 0;
         },
-        message: '订单至少包含一件商品',
+        message: "订单至少包含一件商品",
       },
     },
     totalAmount: {
@@ -53,8 +62,16 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'paid', 'shipped', 'completed', 'cancelled', 'refunding', 'refunded'],
-      default: 'pending',
+      enum: [
+        "pending",
+        "paid",
+        "shipped",
+        "completed",
+        "cancelled",
+        "refunding",
+        "refunded",
+      ],
+      default: "pending",
     },
     shippingAddress: {
       name: {
@@ -90,7 +107,8 @@ const orderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ['alipay', 'wechat', 'card'],
+      enum: ["alipay", "wechat", "card", "cod"],
+      default: "cod",
       required: true,
     },
     paidAt: Date,
@@ -101,27 +119,28 @@ const orderSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
-)
+  },
+);
 
 // 生成订单号
-orderSchema.pre('save', async function (next) {
+orderSchema.pre("save", async function (next) {
   if (!this.orderNo) {
-    const date = new Date()
-    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '')
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
-    this.orderNo = `ORD${dateStr}${random}`
+    const date = new Date();
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, "");
+    const random = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, "0");
+    this.orderNo = `ORD${dateStr}${random}`;
   }
-  next()
-})
+  next();
+});
 
 // 索引
-orderSchema.index({ orderNo: 1 })
-orderSchema.index({ user: 1 })
-orderSchema.index({ status: 1 })
-orderSchema.index({ createdAt: -1 })
+orderSchema.index({ orderNo: 1 });
+orderSchema.index({ user: 1 });
+orderSchema.index({ status: 1 });
+orderSchema.index({ createdAt: -1 });
 
-const Order = mongoose.model('Order', orderSchema)
+const Order = mongoose.model("Order", orderSchema);
 
-export default Order
-
+export default Order;

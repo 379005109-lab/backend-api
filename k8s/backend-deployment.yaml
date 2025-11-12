@@ -22,9 +22,11 @@ spec:
         app: backend-api
         version: v1
     spec:
+      imagePullSecrets:
+      - name: registry-credentials
       containers:
       - name: backend-api
-        image: registry.cn-shanghai.aliyuncs.com/YOUR_USERNAME/backend-api:latest
+        image: registry.example.com/placeholder/backend-api:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 5000

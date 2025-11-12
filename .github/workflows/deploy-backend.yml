@@ -1,0 +1,83 @@
+name: Build and Deploy Backend
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY_URL: ${{ secrets.REGISTRY_URL }}
+  IMAGE_NAME: ${{ secrets.IMAGE_NAME }}
+  K8S_NAMESPACE: ns-cxxiwxce
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci --omit=dev
+        working-directory: server
+
+      - name: Log in to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_URL }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Build and push image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Set image tag
+        id: image
+        run: |
+          echo "image=${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.29.0'
+
+      - name: Configure kubeconfig
+        run: |
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > $HOME/kubeconfig
+          echo "KUBECONFIG=$HOME/kubeconfig" >> $GITHUB_ENV
+
+      - name: Ensure namespace exists
+        run: |
+          kubectl get namespace ${{ env.K8S_NAMESPACE }} >/dev/null 2>&1 || \
+            kubectl create namespace ${{ env.K8S_NAMESPACE }}
+
+      - name: Update registry pull secret
+        run: |
+          kubectl create secret docker-registry registry-credentials \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --docker-server=${{ env.REGISTRY_URL }} \
+            --docker-username=${{ secrets.REGISTRY_USERNAME }} \
+            --docker-password=${{ secrets.REGISTRY_PASSWORD }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy backend resources
+        run: |
+          export IMAGE_TAG=${{ steps.image.outputs.image }}
+          sed "s|registry.example.com/placeholder/backend-api:latest|$IMAGE_TAG|g" k8s/backend-deployment.yaml > /tmp/backend-deployment.yaml
+          kubectl apply -f /tmp/backend-deployment.yaml
+          kubectl rollout status deployment/backend-api -n ${{ env.K8S_NAMESPACE }}
